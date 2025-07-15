@@ -4,7 +4,7 @@ import torch
 import torchvision
 from torchvision import transforms
 
-def load_mnist():
+def load_mnist(number_of_samples=10000):
     # Define transforms
     transform = transforms.Compose([transforms.ToTensor()])
 
@@ -25,8 +25,8 @@ def load_mnist():
     )
 
     # Create data loaders
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=number_of_samples, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=number_of_samples, shuffle=False)
 
     return train_loader, test_loader
 

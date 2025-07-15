@@ -37,6 +37,12 @@ on initialise avec des points random, on fait la distance euclidienne avec les p
 on trouve les plus proches, on fait la moyenne, on déplace le centre et on refait
 attention de bien initialiser les points
 
+compression/décompression: on prend les kmeans et on envoie l'index du kmeans le plus proche de notre point 
+et on décompresse à partir du kmean reçu
+
+#######################################################
+
+
 PCA:
 on a notre dataset,
 on commence par le standardiser: 
