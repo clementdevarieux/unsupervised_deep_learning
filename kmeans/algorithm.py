@@ -74,3 +74,91 @@
 #     vec_of_mu_k
 
 # }
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.datasets import fetch_openml
+from kmeans.decompression import decompress_image
+from sklearn.cluster import KMeans
+
+
+def k_means(inputs_train, number_of_clusters, dimensions_of_inputs, number_of_points, max_iter=100):
+    # Initialisation aléatoire des centres
+    # vec_of_mu_k = np.random.uniform(0, 1, (number_of_clusters, dimensions_of_inputs))
+    vec_of_mu_k = KMeans(n_clusters=number_of_clusters, init='k-means++', n_init=1).fit(inputs_train).cluster_centers_
+
+    for _ in range(max_iter):
+        # Étape 1 : Affectation des points au cluster le plus proche
+        clusters = [[] for _ in range(number_of_clusters)]
+
+        for n in range(number_of_points):
+            point = inputs_train[n]
+            distances = np.linalg.norm(vec_of_mu_k - point, axis=1)
+            closest_cluster = np.argmin(distances)
+            clusters[closest_cluster].append(point)
+
+        # Étape 2 : Mise à jour des centres
+        new_vec_of_mu_k = []
+        for k in range(number_of_clusters):
+            if clusters[k]:  # Si le cluster n'est pas vide
+                new_center = np.mean(clusters[k], axis=0)
+            else:  # Si cluster vide, on réinitialise aléatoirement
+                new_center = np.random.uniform(0, 1, dimensions_of_inputs)
+            new_vec_of_mu_k.append(new_center)
+        
+        new_vec_of_mu_k = np.array(new_vec_of_mu_k)
+
+        # Vérifier la convergence (si les centres ne changent plus beaucoup)
+        if np.allclose(vec_of_mu_k, new_vec_of_mu_k, atol=1e-4):
+            break
+
+        vec_of_mu_k = new_vec_of_mu_k
+
+    return vec_of_mu_k, clusters
+
+def predict_kmeans(image, centers):
+    distances = np.linalg.norm(centers - image, axis=1) 
+    return np.argmin(distances)
+
+def display_image(image, shape):
+    plt.imshow(image.reshape(shape), cmap='gray')
+    plt.show()
+
+if __name__ == "__main__":
+    mnist = fetch_openml('mnist_784', version=1)
+    X = (mnist.data.astype(np.float32) / 255.0).to_numpy()
+    # y = mnist.target.astype(int)
+    
+    # # n_samples = 2000
+    
+    # number_of_clusters = 50
+    
+    # centers, clusters = k_means(
+    # X, number_of_clusters=number_of_clusters, dimensions_of_inputs=784, number_of_points=len(X)
+    # )
+    
+    # np.save("kmeans/data/pred/centers_kmeans.npy", centers)
+    
+    # fig, axes = plt.subplots(1, number_of_clusters, figsize=(15, 3))
+    # for i, ax in enumerate(axes):
+    #     ax.imshow(centers[i].reshape(28, 28), cmap='gray')
+    #     ax.axis("off")
+    #     ax.set_title(f"Cluster {i}")
+    # plt.suptitle("Centres des clusters (k=50)")
+    # plt.show()
+    
+    
+   ###PREDICTION
+    image = X[5]
+    
+    display_image(image, (28, 28))
+    
+    centers = np.load("kmeans/data/pred/centers_kmeans.npy")
+
+    predicted_index = predict_kmeans(image, centers)
+    
+    print(predicted_index)
+    
+    decompressed_image = decompress_image(predicted_index, "kmeans/data/pred/centers_kmeans.npy")
+    display_image(decompressed_image, (28, 28))
