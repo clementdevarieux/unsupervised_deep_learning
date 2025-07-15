@@ -29,7 +29,7 @@ on peut utiliser adam, les optimizers etc
 
 mais c'est nous qui devons standardiser ou calculer la matrice de covariance
 
-########################################################
+#######################################################
 
 Rappel des kmeans:
 algo de lloyd: 
@@ -55,3 +55,42 @@ on commence par le standardiser:
     - pour récupérer les données on fait Mt*D' -> Dataset
 
 choisir point size petit et affichage randomisé sur les calsses de départ
+
+#######################################################
+
+AutoEncoders
+2 modules : encoder / decoder
+(z = espace latent)
+(x = couche de départ / x' = reconstruction)
+z = encode(x) 
+x' = decode(z) 
+
+il s'agit de prédire la même donnée que ce qui est donné en entrée
+la première partie 
+
+on utilise la MSE pour le loss
+tester la RELU, la tanh, et la sigmoid en fonction de ce qu'on choisi pour normaliser
+
+comment on utilise pour la visualisation du dataset ?
+on prend tout le dataset, on le projette dans l'espace z, puis on plot ça dans l'espace 2d
+pour voir où le modèle a appris à projeter ses données
+
+pour générer de la nouvelle donnée, on va tirer des valeurs au hasard dans l'espace latent
+quand il nous dit de projeter la donnée pour visualisation dans un espace latent il veut un graphique
+quand il dit générer de la nouvelle donnée, soit on fait au hasard avec des nouveaux trucs, soit du sampling
+
+pour faire l'auto encodeur c'est bien de pouvoir entrainer tout d'un coup, 
+mais d'utiliser la premiere et la derniere partie séparée
+
+genre on fait un encoder qui va jusqu'à la couche de 2 neuronnes,
+on fait le décoder qui commence à 2 puis va dans l'autre sense
+
+et l'autoencoder c'est un sequential composé de l'encoder puis du décoder
+
+avec l'API fonctionnelle, il fait un input,
+il enchaine les couches, et garde l'output decoder,
+
+ensuite l'encoder prendre inputencoder et output encoder 
+
+ensuite le décodeur il part de 2 puis augment, a un output decodeur 
+et c'est la combien d'input decoder et output decoder
