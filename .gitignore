@@ -205,6 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.idea/
+kmeans/algo_example.rs
+kmeans/k_means_backup.py
 
 
 # data files

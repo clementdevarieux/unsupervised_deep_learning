@@ -103,7 +103,7 @@ def k_means(inputs_train, number_of_clusters, dimensions_of_inputs, number_of_po
             else:  # Si cluster vide, on réinitialise aléatoirement
                 new_center = np.random.uniform(0, 1, dimensions_of_inputs)
             new_vec_of_mu_k.append(new_center)
-        
+
         new_vec_of_mu_k = np.array(new_vec_of_mu_k)
 
         # Vérifier la convergence (si les centres ne changent plus beaucoup)
@@ -115,7 +115,7 @@ def k_means(inputs_train, number_of_clusters, dimensions_of_inputs, number_of_po
     return vec_of_mu_k, clusters
 
 def predict_kmeans(image, centers):
-    distances = np.linalg.norm(centers - image, axis=1) 
+    distances = np.linalg.norm(centers - image, axis=1)
     return np.argmin(distances)
 
 def display_image(image, shape):
@@ -171,19 +171,19 @@ if __name__ == "__main__":
     #     ax.set_title(f"Cluster {i}")
     # plt.suptitle("Centres des clusters (k=50)")
     # plt.show()
-    
-    
+
+
    ###PREDICTION
     image = X[4]
     
     display_image(image, (28, 28))
-    
+
     centers = np.load("kmeans/data/pred/centers_kmeans.npy")
 
     predicted_index = predict_kmeans(image, centers)
-    
+
     print(predicted_index)
-    
+
     decompressed_image = decompress_image(predicted_index, "kmeans/data/pred/centers_kmeans.npy")
     display_image(decompressed_image, (28, 28))
     

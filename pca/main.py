@@ -1,15 +1,14 @@
 from algorithm import pca
 from compression import decompress_data
 from generation import generate_new_data
-from utils import load_mnist, print_mnist_images
-from visualisation import visualize_latent_space
+from utils import load_mnist
+from visualisation import visualize_latent_space, plot_reconstructed_images, plot_images_grid
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
 
 def main(n_components):
     # Load the MNIST dataset
-    train_loader, test_loader = load_mnist(100)
+    train_loader, test_loader = load_mnist(50000)
     
     # Get a batch of images and labels
     images, labels = next(iter(train_loader))
@@ -39,15 +38,17 @@ def main(n_components):
     latent_samples = sample_latent_space(num_samples=10, n_components=n_components)
     new_images = generate_new_data(latent_samples, eigenvectors[:, :n_components])
     
-    # Print some images
-    print_mnist_images(images[:8], labels[:8])
+    # Display original images
+    plot_images_grid(images[:8], labels[:8], "Original MNIST Images")
+    
+    # Display original vs reconstructed images
+    original_flat = images[:8].view(8, -1).numpy()
+    plot_reconstructed_images(original_flat, reconstructed_data[:8], n=8)
+    
+    # Display generated images
+    # Create dummy labels for generated images
+    dummy_labels = np.arange(len(new_images))
+    plot_images_grid(new_images[:8], dummy_labels[:8], "Generated Images from Latent Space")
 
-    reconstructed_tensor = torch.from_numpy(reconstructed_data[:8]).float().reshape(-1, 1, 28, 28)
-    print_mnist_images(reconstructed_tensor, labels[:8])
-    
-    # Convert new_images back to PyTorch tensor for visualization
-    new_images_tensor = torch.from_numpy(new_images).float().reshape(-1, 1, 28, 28)
-    print_mnist_images(new_images_tensor, labels[:10])
-    
 if __name__ == "__main__":
-    main(n_components=2)  # You can change the number of components as needed
+    main(n_components=200)  # You can change the number of components as needed
