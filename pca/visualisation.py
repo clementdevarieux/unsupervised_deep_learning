@@ -15,7 +15,7 @@ def visualize_latent_space(X_transformed, labels):
     for i, class_label in enumerate(unique_classes):
         mask = labels == class_label
         plt.scatter(X_transformed[mask, 0], X_transformed[mask, 1], 
-                   c=[colors[i]], label=f'Class {class_label}', s=50, alpha=0.7)
+                   c=[colors[i]], label=f'Class {class_label}', s=5, alpha=0.7)
     
     plt.xlabel('Principal Component 1')
     plt.ylabel('Principal Component 2')

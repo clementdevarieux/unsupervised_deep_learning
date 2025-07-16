@@ -1,0 +1,168 @@
+Projet:
+- mnist digit et y appliquer les algos qu'on va voir
+- comme les autres projets mais en condensé
+
+On va faire des K-means, PCA, AutoEncoders, (premier rendu)
+SOM (Kohonen Maps), GAN (deuxième rendu)
+
+et si tout se passe bien du VAE ou xGAN/Diffusion Models
+
+MNIST préparer la donnéer ? trier par classe, mélanger, normaliser, standardiser ?
+
+Machine Learning non supervisé: 
+- existe-t-il des relations entre mes données ?
+- existe-t-il des clusters dans mes données ?
+- existe-t-il des colonnes (données) inutiles dans mon dataset ?
+- peut-on visualiser de manière intelligible pour un être humain des données de grande dimmension ?
+- peut-on réduire les dimensions des données pour faciliter l'apprentissage supervisé
+- peut-on générer des nouvelles données artificielles ?
+
+rélféchier pour générer de la data avec les kmeans
+GAN pas fait pour compression décompression
+
+pour chaque algo on doit avoir comment on a compresser/décompresser de la donnée
+comment on a réussi à projeter les données dans un espace de dimension réduite pour faire une visulisation du dataset
+générer de la nouvelle donnée 
+
+on a le droit d'utiliser tensorflow, pytorch etc pour faire de l'autodifférentiation pour corrriger les poids
+on peut utiliser adam, les optimizers etc
+
+mais c'est nous qui devons standardiser ou calculer la matrice de covariance
+
+#######################################################
+
+Rappel des kmeans:
+algo de lloyd: 
+on initialise avec des points random, on fait la distance euclidienne avec les points, 
+on trouve les plus proches, on fait la moyenne, on déplace le centre et on refait
+attention de bien initialiser les points
+
+compression/décompression: on prend les kmeans et on envoie l'index du kmeans le plus proche de notre point 
+et on décompresse à partir du kmean reçu
+
+pour l'affichage on fait un graphique en barres, avec les classes en bas (ou un multibars) 
+et comme ça on voit tous les classes qui ont été bien/mal placés
+
+#######################################################
+
+
+PCA:
+on a notre dataset,
+on commence par le standardiser: 
+- attention au type de standardisation (on centre et on réduit les données)
+- est-ce qu'on standardise par colonne ou full ? 
+    - si à la colonne on détruit de l'info
+    - si c'est des tas de pixels on fait l'ensemble plutôt
+    - variance (/ écart-type) ?
+- calculer la CoMatrix
+    - Bonus: GPU
+- récupérer les eigen values et vector (valeurs propres / vecteurs propres)
+    - attention si c'est en colonnes ou lignes qu'ils sont affichés (pour transposer ou pas)
+- trier nos vecteurs propres en ordre décroissant des valeurs propres
+- choisir (c'est cette étape qui change enfonction de compression, décompression, etc) K vecteurs propres 
+    - ça nous donne une matrice M, pour projeter les données dans l'espace lattent, on fait juste M*Dataset -> D' (produit matriciel)
+    - pour récupérer les données on fait Mt*D' -> Dataset
+
+choisir point size petit et affichage randomisé sur les calsses de départ
+
+#######################################################
+
+AutoEncoders
+2 modules : encoder / decoder
+(z = espace latent)
+(x = couche de départ / x' = reconstruction)
+z = encode(x) 
+x' = decode(z) 
+
+il s'agit de prédire la même donnée que ce qui est donné en entrée
+la première partie 
+
+on utilise la MSE pour le loss
+tester la RELU, la tanh, et la sigmoid en fonction de ce qu'on choisi pour normaliser
+
+comment on utilise pour la visualisation du dataset ?
+on prend tout le dataset, on le projette dans l'espace z, puis on plot ça dans l'espace 2d
+pour voir où le modèle a appris à projeter ses données
+
+pour générer de la nouvelle donnée, on va tirer des valeurs au hasard dans l'espace latent
+quand il nous dit de projeter la donnée pour visualisation dans un espace latent il veut un graphique
+quand il dit générer de la nouvelle donnée, soit on fait au hasard avec des nouveaux trucs, soit du sampling
+
+pour faire l'auto encodeur c'est bien de pouvoir entrainer tout d'un coup, 
+mais d'utiliser la premiere et la derniere partie séparée
+
+genre on fait un encoder qui va jusqu'à la couche de 2 neuronnes,
+on fait le décoder qui commence à 2 puis va dans l'autre sense
+
+et l'autoencoder c'est un sequential composé de l'encoder puis du décoder
+
+avec l'API fonctionnelle, il fait un input,
+il enchaine les couches, et garde l'output decoder,
+
+ensuite l'encoder prendre inputencoder et output encoder 
+
+ensuite le décodeur il part de 2 puis augment, a un output decodeur 
+et c'est la combien d'input decoder et output decoder
+
+
+##################################
+
+Kohonen Maps 
+Retour sur les kmeans
+idée: contraintes sur les kmeans 
+ajouter des coordonnées à chaque centroide pour former une topologie
+ainsi : chaque neurone (cluster) i possède: coordinate vector (Ci), Feature Vector (Wi)
+(la classe 0 doit etre plus proche de la classe 1 que de la 2 et la 3 etc)
+on rajoute une contrainte où chaque classe doit etre plus proche de ses voisins que de les autres
+(en terme de distance euclidienne dans l'espace de départ)
+pour chaque représentant on met un couple (i, j) pour le truc des 16 classes en 2D
+et on a toujours l'histoire des voisins proches
+le C0 = (0, 0) est figé d'entrée (et c'est le cas pour tous)
+le feature vector c'est les 784 valeurs du mnist et on l'initialise au hasard avec des images du dataset
+
+pour l'affichage soit pour chage représentant on fait un bar plot
+soit si on est coquin on fait une projection continue où on projete 
+le mnist dans un espace 2D conditionné par l'histoire de distance euclidienne
+
+
+#######################################
+
+GAN on fait juste générer des images factices (pas comp/decomp, pas affichage espace latent)
+'je veux générer des nouvelles images, qui n'appartiennent pas au dataset, mais qui y ressemble quand meme vachement'
+le dataset ne se déverse jamais dans le générateur
+on a 2 sections:
+- un générator ( un réseau de neurone par exemple )
+- un discriminator ( pareil )
+on va les entrainer de manière compétitive
+
+c'est comme si on avait deux agents qui ont des objectifs différents
+- le discriminator on va l'entrainer comme un agent pour qu'il soit capable de détecter 
+une image générée par rappport à une image provenant du dataset 
+- le générator qui à partir de random sampling (distribution normale) dans un espace latent quelconque 
+et on voit qu'il nous génère une image, et on va l'entrainer à tromper le discriminator
+- du coup on va figer les poids du discriminator et on va corriger l'ensemble des poids entrainables du
+ generator de manière inverse pour que le discriminator ne trouve pas que ça soit une image générée
+
+en version vanilla, on va prendre un latent space de 2/3 dimensions pour pouvoir l'afficher et comprendre
+si on augmente les dimensions, on peut se balader sur le latent space, et par exemple sur de la génération de visage
+on aurait une dimension pour la couleur des cheveux, un sur les yeux etc 
+
+apprentissage (vanilla):
+répéter:
+- apprentissage du discriminateur:
+    - générer un demi batch de données à partir des données réelles on leur assigne le laabel 1
+    - idem à partir du générateur et label 0
+    - on mélange pour former un batch
+    - on effectue n itérations d'apprentissage à l'aide de ce dernier (1 <=n<=5)
+- apprentissage du générateur:
+    - figer les variables du discriminateur
+    - générer un batch de données dans le latent space avec label target 1
+    - effectuer 1 itération d'apprentissage à l'aide de ce dernier
+
+- faire varier:
+    - strucutre ()
+    - n (intérations du discriminateur)
+    - pas d'apprentissage (les deux)
+    - fonction de loss (MSE, KL, )
+    - regarder WGAN-GP et MSG GAN (https://keras.io/examples/generative/wgan_gp/)
+
