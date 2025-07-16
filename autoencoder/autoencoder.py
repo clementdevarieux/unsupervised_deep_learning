@@ -1,6 +1,4 @@
 from torch import nn
-import torchvision
-
 
 class Autoencoder(nn.Module):
     def __init__(self, **kwargs):
@@ -25,7 +23,7 @@ class Autoencoder(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(input_shape, 512),
             self.activation_function,
-            nn.Linear(512, 256),  # Fixed: was 256, should be 512
+            nn.Linear(512, 256),
             self.activation_function,
             nn.Linear(256, 64),
             self.activation_function,

@@ -1,7 +1,5 @@
 import torch
 import matplotlib.pyplot as plt
-import numpy as np
-
 
 def show_reconstruction(model, sample, epoch=None):
     device = next(model.parameters()).device

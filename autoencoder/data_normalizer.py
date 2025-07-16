@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 class DataNormalizer:
     def __init__(self, method=None):
         self.method = method
@@ -31,12 +30,12 @@ class DataNormalizer:
 
         data_array = self._to_numpy(data)
 
-        if self.method == "sigmoid" or self.method == "relu":
-            return (data_array - self.min_val) / (self.max_val - self.min_val)
-        elif self.method == "tanh":
+        if self.method == "tanh":
             normalized = (data_array - self.min_val) / (self.max_val - self.min_val)
             return 2 * normalized - 1
-        return data_array
+        else:
+            return (data_array - self.min_val) / (self.max_val - self.min_val)
+
 
     def fit_transform(self, data):
         return self.fit(data).transform(data)
@@ -47,9 +46,8 @@ class DataNormalizer:
 
         data_array = self._to_numpy(data)
 
-        if self.method == "sigmoid" or self.method == "relu":
-            return data_array * (self.max_val - self.min_val) + self.min_val
-        elif self.method == "tanh":
+        if self.method == "tanh":
             normalized = (data_array + 1) / 2
             return normalized * (self.max_val - self.min_val) + self.min_val
-        return data_array
+        else:
+            return data_array * (self.max_val - self.min_val) + self.min_val
