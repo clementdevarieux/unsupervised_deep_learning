@@ -73,13 +73,10 @@
 #     }
 #     vec_of_mu_k
 
-# }
-
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_openml
-from kmeans.decompression import decompress_image
 from sklearn.cluster import KMeans
 
 
@@ -122,23 +119,50 @@ def predict_kmeans(image, centers):
     return np.argmin(distances)
 
 def display_image(image, shape):
+    image = image*255
     plt.imshow(image.reshape(shape), cmap='gray')
+    plt.show()
+
+def decompress_image(index, file_path):
+    centers = np.load(file_path)
+    return centers[index]
+
+def plot_cluster_distribution(predicted_index, number_of_clusters, centers_file_path, dataset):
+    centers = np.load(centers_file_path)
+    number_of_clusters = len(centers)
+    
+    predicted_index = []
+    for value in dataset:
+        predicted_index.append(predict_kmeans(value, centers))
+         
+    # Compter le nombre d'images dans chaque cluster
+    cluster_sizes = [predicted_index.count(i) for i in range(number_of_clusters)]
+    
+    # Générer une palette de couleurs unique pour chaque cluster
+    cmap = plt.get_cmap('tab20' if number_of_clusters <= 20 else 'hsv')
+    colors = [cmap(i / number_of_clusters) for i in range(number_of_clusters)]
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(range(number_of_clusters), cluster_sizes, color=colors)
+    plt.xlabel('Index du cluster')
+    plt.ylabel("Nombre d'images")
+    plt.title("Répartition des images dans les clusters")
+    plt.xticks(range(number_of_clusters))
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
     mnist = fetch_openml('mnist_784', version=1)
     X = (mnist.data.astype(np.float32) / 255.0).to_numpy()
-    # y = mnist.target.astype(int)
-    
-    # # n_samples = 2000
-    
-    # number_of_clusters = 50
-    
+ 
+    number_of_clusters = 100
+    # save_name = "centers_kmeans_10"
     # centers, clusters = k_means(
     # X, number_of_clusters=number_of_clusters, dimensions_of_inputs=784, number_of_points=len(X)
     # )
     
-    # np.save("kmeans/data/pred/centers_kmeans.npy", centers)
+    # np.save(f"kmeans/data/pred/{save_name}.npy", centers)
     
     # fig, axes = plt.subplots(1, number_of_clusters, figsize=(15, 3))
     # for i, ax in enumerate(axes):
@@ -150,7 +174,7 @@ if __name__ == "__main__":
     
     
    ###PREDICTION
-    image = X[5]
+    image = X[4]
     
     display_image(image, (28, 28))
     
@@ -162,3 +186,6 @@ if __name__ == "__main__":
     
     decompressed_image = decompress_image(predicted_index, "kmeans/data/pred/centers_kmeans.npy")
     display_image(decompressed_image, (28, 28))
+    
+    ## VISUALISATION
+    # plot_cluster_distribution(X, number_of_clusters, "kmeans/data/pred/centers_kmeans_100.npy", X)
