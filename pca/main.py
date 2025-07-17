@@ -6,7 +6,7 @@ from visualisation import visualize_latent_space, plot_reconstructed_images, plo
 import numpy as np
 
 def main(n_components):
-    train_loader, test_loader = load_mnist(50000)
+    train_loader, test_loader = load_mnist(5000)
     
     images, labels = next(iter(train_loader))
     X = images.view(images.size(0), -1).numpy()
@@ -34,4 +34,4 @@ def main(n_components):
     plot_images_grid(new_images_denorm[:10], dummy_labels[:10], "Generated Images from Latent Space")
 
 if __name__ == "__main__":
-    main(n_components=500)  
+    main(n_components=200)  
