@@ -21,7 +21,7 @@ def create_batches(data, batch_size, shuffle=True):
 
 
 def train_autoencoder(model, train_data, optimizer, criterion, epochs, batch_size=64,
-                      visualize_every=1, image_shape=None, model_save_path="autoencoder_model.pth",
+                      visualize_every=1, image_shape=None, model_save_path="google_model.pth",
                       log_dir="./runs/autoencoder"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
