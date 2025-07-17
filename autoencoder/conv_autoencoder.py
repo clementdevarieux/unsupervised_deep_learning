@@ -1,5 +1,6 @@
 from torch import nn
 
+
 class ConvAutoencoder(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
@@ -34,9 +35,14 @@ class ConvAutoencoder(nn.Module):
             self.activation_function,
 
             nn.Conv2d(128, 1, kernel_size=3, stride=2, padding=1),
+            nn.Flatten(),
+            nn.Linear(4, 2)
         )
 
         self.decoder = nn.Sequential(
+            nn.Linear(2, 4),
+            nn.Unflatten(1, (1, 2, 2)),
+
             nn.ConvTranspose2d(1, 128, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.BatchNorm2d(128),
             self.activation_function,
