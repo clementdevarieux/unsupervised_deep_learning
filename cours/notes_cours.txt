@@ -166,3 +166,38 @@ répéter:
     - fonction de loss (MSE, KL, )
     - regarder WGAN-GP et MSG GAN (https://keras.io/examples/generative/wgan_gp/)
 
+
+REEXPLICATION:
+
+
+
+###########################################
+
+VAE:
+on repart de l'auto encoder
+
+idée: 
+- l'encoder ne projette plus directement dans l'espace latent 
+mais produit les paramètre de plusieurs distributions d probabilité -> l'ouput de l'encodeur c'est les probabilité *
+de cette entrée dans l'espace latent, en général la moyenne et l'écart type (pour une Gaussienne)
+- Le générateur va échantillonner la Gaussienne (sampling), et faire le processus classique comme précédemment
+
+le problème: on ne peut pas dériver un échantillonnage pour la backpropagation
+solution le 'reparameterization trick':
+- au lieu d'échantilloner la distribution de moyenne mu et std sigma, 
+on va échantillonner une distribution Normale standard N(0, 1), puis multiplier le résultat par sigma et ajouter mu.
+du coup l'échantillonnage ne dépend plus des valeurs prédites par l'encodeur
+
+on ajoute une régularisation (pénalité de loss) aux param des gaussiennes 
+s'éloignant trop de la distribution normal standard (voir formule cours)
+comme ça tout l'espace est bien représenté, et ça apprend pas à prédire tout le temps sigma = 0
+
+mais en vrai dans la pratique on fait prédire à l'encodeur mu et le log de la variance plutôt que sigma 
+en faisant :
+z = mu + e**(0.5*log(sigma²) * N(0, 1))
+
+
+
+######################
+
+Pour demain 15min de présentation, 10min de questions

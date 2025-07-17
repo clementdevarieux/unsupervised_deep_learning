@@ -6,6 +6,8 @@ import data_normalizer
 from sklearn.datasets import fetch_openml
 from conv_autoencoder import ConvAutoencoder  # Your new file
 import torch
+from latent_analysis import encode_dataset, generate_samples
+from visualisation import visualize_latent
 
 if __name__ == '__main__':
     mnist = fetch_openml('mnist_784', version=1)
@@ -13,7 +15,7 @@ if __name__ == '__main__':
     activation_function = "leaky_relu"
     batch_size = 64
     epochs = 20
-    lr = 1e-4
+    lr = 1e-3
 
     normalizer = data_normalizer.DataNormalizer(method=activation_function)
     normalized_data = normalizer.fit_transform(mnist.data)
@@ -28,3 +30,7 @@ if __name__ == '__main__':
     print(f"Before training - Output range: {output.min():.3f} to {output.max():.3f}")
 
     train_autoencoder(model, train_data=normalized_data, optimizer=optimizer, criterion=criterion, epochs=epochs, batch_size=batch_size, visualize_every=1)
+
+    latents = encode_dataset(model, normalized_data)
+    new_samples = generate_samples(model, latents, n_samples=100)
+    visualize_latent(model, latents)
