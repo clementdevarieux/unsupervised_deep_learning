@@ -48,10 +48,11 @@ def print_mnist_images(images, labels):
 def load_and_standardize_data(num_samples=10000):
     mnist = fetch_openml("mnist_784", version=1, parser="auto")
     data = mnist.data[:num_samples].values.astype(np.float32)
+    labels = mnist.target[:num_samples].values.astype(int)
 
     data_normalized = data / 255.0
 
-    return data_normalized
+    return data_normalized, labels
 
 
 def save_results(weights, map_lines, map_columns, filename="kohonen_map_weights.npy"):

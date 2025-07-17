@@ -1,7 +1,7 @@
 from algorithm import konoha_map
 from compression import compression_decompression_pipeline
 from generation import generate_new_samples
-from visualisation import plot_latent_space
+from visualisation import plot_latent_space, analyze_class_distribution_on_map
 from utils import load_and_standardize_data, save_results
 
 
@@ -12,14 +12,14 @@ def main():
         "map_columns": 15,
         "learning_rate": 0.5,
         "gamma": 1.0,
-        "num_iterations": 50,
+        "num_iterations": 15,
         "batch_size": 200,
         "test_samples": 10,
         "generated_samples": 10,
-        "save_every": 5,
+        "save_every": 3,
     }
 
-    data = load_and_standardize_data(num_samples=config["num_samples"])
+    data, labels = load_and_standardize_data(num_samples=config["num_samples"])
 
     W = konoha_map(
         map_lines=config["map_lines"],
@@ -33,6 +33,14 @@ def main():
     )
 
     plot_latent_space(W, config["map_lines"], config["map_columns"])
+
+    analyze_class_distribution_on_map(
+        data=data,
+        labels=labels,
+        weights=W,
+        map_lines=config["map_lines"],
+        map_columns=config["map_columns"]
+    )
 
     compression_decompression_pipeline(
         data=data,
