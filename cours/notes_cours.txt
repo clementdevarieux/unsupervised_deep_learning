@@ -167,6 +167,10 @@ répéter:
     - regarder WGAN-GP et MSG GAN (https://keras.io/examples/generative/wgan_gp/)
 
 
+REEXPLICATION:
+
+
+
 ###########################################
 
 VAE:
@@ -191,3 +195,9 @@ comme ça tout l'espace est bien représenté, et ça apprend pas à prédire to
 mais en vrai dans la pratique on fait prédire à l'encodeur mu et le log de la variance plutôt que sigma 
 en faisant :
 z = mu + e**(0.5*log(sigma²) * N(0, 1))
+
+
+
+######################
+
+Pour demain 15min de présentation, 10min de questions
