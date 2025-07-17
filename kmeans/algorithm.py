@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.cluster import KMeans
+from data_loader import load_images_from_folder, load_and_normalize_images
+import os
 
 
 def k_means(inputs_train, number_of_clusters, dimensions_of_inputs, number_of_points, max_iter=100):
@@ -40,6 +42,15 @@ def predict_kmeans(image, centers):
 def display_image(image, shape):
     image = image*255
     plt.imshow(image.reshape(shape), cmap='gray')
+    plt.show()
+
+def display_image_color(image, shape):
+    if len(shape) == 3:  # Color image
+        reshaped_img = np.clip(image.reshape(shape), 0, 1)
+        plt.imshow(reshaped_img)
+    else:  # Grayscale image
+        reshaped_img = image.reshape(shape) * 255
+        plt.imshow(reshaped_img, cmap='gray')
     plt.show()
 
 def decompress_image(index, file_path):
@@ -96,17 +107,79 @@ def display_comparison(X, centers_file_path, indices, noise_level=0.1, shape=(28
     plt.tight_layout()
     plt.show()
 
+def display_comparison_fruits(X, centers_file_path, indices, noise_level=0.1, shape=(32, 32, 3)):
+    centers = np.load(centers_file_path)
+    n = len(indices)
+    plt.figure(figsize=(9, 3 * n))
+    for i, idx in enumerate(indices):
+        original = X[idx]
+        cluster_idx = predict_kmeans(original, centers)
+        reconstructed = centers[cluster_idx]
+        generated = generate_data_from_cluster(cluster_idx, centers_file_path, noise_level)
+
+        for j, (img, title) in enumerate(zip([original, reconstructed, generated],
+                                             ["Originale", "Reconstruction", "Génération"])):
+            plt.subplot(n, 3, i * 3 + j + 1)
+            
+            # Handle different image types
+            if len(shape) == 3:  # Color image (H, W, C)
+                reshaped_img = img.reshape(shape)
+                # Clip values to valid range [0, 1] for color images
+                reshaped_img = np.clip(reshaped_img, 0, 1)
+                plt.imshow(reshaped_img)
+            else:  # Grayscale image (H, W)
+                reshaped_img = img.reshape(shape) * 255
+                reshaped_img = np.clip(reshaped_img, 0, 255)
+                plt.imshow(reshaped_img, cmap='gray')
+            
+            plt.axis('off')
+            plt.title(f"{title} (idx={idx})" if j == 0 else title)
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
-    mnist = fetch_openml('mnist_784', version=1)
-    X = (mnist.data.astype(np.float32) / 255.0).to_numpy()
- 
+    # mnist = fetch_openml('mnist_784', version=1)
+    # X = (mnist.data.astype(np.float32) / 255.0).to_numpy()
+    # Define the paths
+    input_dir = 'data/fruits_dataset'
+    output_dir = 'processed_data'
+
+    # Load images and labels
+    images, labels = load_images_from_folder(input_dir, max_images_per_class=20, target_size=(32, 32))
+
+    # Preprocess images
+    normalized_images = load_and_normalize_images(images, flatten=True)
+
+    X = np.array(normalized_images)
+
+    # Save processed images
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for i, (image, label) in enumerate(zip(normalized_images, labels)):
+        label_dir = os.path.join(output_dir, label)
+        if not os.path.exists(label_dir):
+            os.makedirs(label_dir)
+        np.save(os.path.join(label_dir, f'image_{i}.npy'), image)
+
+    dimensions_of_inputs = X.shape[1]
     number_of_clusters = 100
-    # save_name = "centers_kmeans_10"
+    save_name = "fruits_kmeans_100"
+
+    os.makedirs("kmeans/data/fruits/pred", exist_ok=True)
+
     # centers, clusters = k_means(
     # X, number_of_clusters=number_of_clusters, dimensions_of_inputs=784, number_of_points=len(X)
     # )
+
+    centers, clusters = k_means(
+        X, 
+        number_of_clusters=number_of_clusters, 
+        dimensions_of_inputs=dimensions_of_inputs, 
+        number_of_points=len(X)
+    )
     
-    # np.save(f"kmeans/data/pred/{save_name}.npy", centers)
+    np.save(f"kmeans/data/fruits/pred/{save_name}.npy", centers)
     
     # fig, axes = plt.subplots(1, number_of_clusters, figsize=(15, 3))
     # for i, ax in enumerate(axes):
@@ -117,7 +190,7 @@ if __name__ == "__main__":
     # plt.show()
 
 
-   ###PREDICTION
+   ### PREDICTION
     # image = X[4]
     
     # display_image(image, (28, 28))
@@ -137,4 +210,6 @@ if __name__ == "__main__":
     
     ## VISUALISATION
     # plot_cluster_distribution(X, number_of_clusters, "kmeans/data/pred/centers_kmeans_100.npy", X)
-    display_comparison(X, "kmeans/data/pred/centers_kmeans.npy", indices=[0, 1, 2, 3, 4], noise_level=0.2, shape=(28, 28))
+    # display_comparison(X, f"kmeans/data/fruits/pred/{save_name}.npy", indices=[0, 1, 2, 3, 4], noise_level=0.2, shape=(32, 32))
+
+    display_comparison_fruits(X, f"kmeans/data/fruits/pred/{save_name}.npy", indices=[0, 1, 2, 3, 4], noise_level=0.2, shape=(32, 32, 3))
