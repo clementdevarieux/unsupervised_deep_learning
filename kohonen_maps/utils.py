@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 from torchvision import transforms
+from sklearn.datasets import fetch_openml
+import os
 
 def load_mnist(number_of_samples=10000):
     # Define transforms
@@ -42,3 +44,23 @@ def print_mnist_images(images, labels):
         plt.axis('off')
     plt.tight_layout()
     plt.show()
+
+def load_and_standardize_data(num_samples=10000):
+    mnist = fetch_openml("mnist_784", version=1, parser="auto")
+    data = mnist.data[:num_samples].values.astype(np.float32)
+    labels = mnist.target[:num_samples].values.astype(int)
+
+    data_normalized = data / 255.0
+
+    return data_normalized, labels
+
+
+def save_results(weights, map_lines, map_columns, filename="kohonen_map_weights.npy"):
+    weights_array = np.zeros((map_lines, map_columns, len(list(weights.values())[0])))
+
+    for i in range(map_lines):
+        for j in range(map_columns):
+            weights_array[i, j] = weights[(i, j)]
+
+    os.makedirs("data/kohonen/mnist/weights", exist_ok=True)
+    np.save(f"data/kohonen/mnist/weights/{filename}", weights_array)
