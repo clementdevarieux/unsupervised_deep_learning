@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.datasets import fetch_openml
 import data_normalizer
-from conv_autoencoder import ConvAutoencoder
-from latent_analysis import encode_dataset, generate_samples
+from vae import VariationalAutoencoder
+from variational_latent_analysis import encode_dataset, generate_samples
 
 
-def visualize_latent_space(latent_representations, labels=None, title="Autoencoder Latent Space"):
+def visualize_latent_space(latent_representations, labels=None, title="VAE Latent Space"):
     plt.figure(figsize=(10, 8))
 
     if labels is not None:
@@ -43,7 +43,9 @@ def show_reconstruction(model, sample, epoch=None):
         if len(sample_tensor.shape) == 1:
             sample_tensor = sample_tensor.unsqueeze(0)
 
-        reconstruction = model(sample_tensor).cpu().numpy().squeeze()
+        # FIX: Unpack the tuple returned by model()
+        reconstruction, _, _ = model(sample_tensor)
+        reconstruction = reconstruction.cpu().numpy().squeeze()
         original = sample_tensor.cpu().numpy().squeeze()
 
     original_img = original.reshape(28, 28)
@@ -61,7 +63,7 @@ def show_reconstruction(model, sample, epoch=None):
     plt.title('Reconstructed')
     plt.axis('off')
 
-    title = f'MNIST Reconstruction - Epoch {epoch}' if epoch else 'MNIST Reconstruction'
+    title = f'MNIST VAE Reconstruction - Epoch {epoch}' if epoch else 'MNIST VAE Reconstruction'
     plt.suptitle(title)
     plt.tight_layout()
     plt.show()
@@ -90,7 +92,7 @@ def show_sample_images(images, labels, title="Sample Images", n=8):
 
 def show_generated_samples(generated_images, n_samples=8):
     fig, axes = plt.subplots(2, 4, figsize=(12, 6))
-    fig.suptitle('Generated Images from Latent Sampling', fontsize=16, fontweight='bold')
+    fig.suptitle('Generated Images from VAE Latent Sampling', fontsize=16, fontweight='bold')
 
     for i, ax in enumerate(axes.flat):
         if i < n_samples:
@@ -130,7 +132,7 @@ def interpolate_between_digits(model, latent_representations, labels, digit1=0, 
         interpolated_images = model.decode(latent_tensor).cpu().numpy()
 
     fig, axes = plt.subplots(1, n_steps, figsize=(2 * n_steps, 3))
-    fig.suptitle(f'Interpolation from Digit {digit1} to Digit {digit2}', fontsize=16, fontweight='bold')
+    fig.suptitle(f'VAE Interpolation from Digit {digit1} to Digit {digit2}', fontsize=16, fontweight='bold')
 
     for i in range(n_steps):
         axes[i].imshow(interpolated_images[i].reshape(28, 28), cmap='gray')
@@ -169,7 +171,7 @@ def explore_latent_space_grid(model, latent_representations, grid_size=5, scale=
         generated_images = model.decode(latent_tensor).cpu().numpy()
 
     fig, axes = plt.subplots(grid_size, grid_size, figsize=(10, 10))
-    fig.suptitle('Latent Space Grid Exploration', fontsize=16, fontweight='bold')
+    fig.suptitle('VAE Latent Space Grid Exploration', fontsize=16, fontweight='bold')
 
     for i in range(grid_size):
         for j in range(grid_size):
@@ -191,7 +193,7 @@ def perturb_existing_samples(model, subset_data, subset_labels, latent_represent
     indices = np.random.choice(len(latent_representations), n_samples, replace=False)
 
     fig, axes = plt.subplots(2, n_samples, figsize=(2 * n_samples, 6))
-    fig.suptitle('Original vs Perturbed Latent Representations', fontsize=16, fontweight='bold')
+    fig.suptitle('Original vs Perturbed VAE Latent Representations', fontsize=16, fontweight='bold')
 
     for i, idx in enumerate(indices):
         original_img = subset_data[idx].reshape(28, 28)
@@ -217,27 +219,27 @@ def perturb_existing_samples(model, subset_data, subset_labels, latent_represent
     model.train()
 
 
+# Main execution
 if __name__ == '__main__':
-    activation_function = "leaky_relu"
-    model_path = "models/google_model.pth"
+    activation_function = "relu"  # Match what you used in training
+    model_path = "google_model.pth"  # Your saved model path
 
     print("Loading MNIST data...")
     mnist = fetch_openml('mnist_784', version=1)
-
     labels = mnist.target.astype(int)
 
     normalizer = data_normalizer.DataNormalizer(method=activation_function)
     normalized_data = normalizer.fit_transform(mnist.data)
 
-    print(f"Loading model from {model_path}...")
+    print(f"Loading VAE model from {model_path}...")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = ConvAutoencoder(input_shape=784, activation_function=activation_function)
+    model = VariationalAutoencoder(input_shape=784, activation_function=activation_function)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()
 
-    print("Model loaded successfully!")
+    print("VAE model loaded successfully!")
 
     n_samples = 5000
     subset_data = normalized_data[:n_samples]
@@ -254,22 +256,21 @@ if __name__ == '__main__':
     print("Encoding dataset to latent space...")
     latents = encode_dataset(model, subset_data)
 
-    print("Visualizing latent space...")
-    visualize_latent_space(latents, subset_labels,
-                                  "Autoencoder Latent Space - MNIST Digits")
+    print("Visualizing VAE latent space...")
+    visualize_latent_space(latents, subset_labels, "VAE Latent Space - MNIST Digits")
 
-    print("\nGenerating new samples...")
+    print("\nGenerating new samples from VAE...")
     generated_samples = generate_samples(model, latents, n_samples=8)
     show_generated_samples(generated_samples)
 
-    print("\nInterpolating between different digits...")
+    print("\nInterpolating between different digits in VAE latent space...")
     interpolate_between_digits(model, latents, subset_labels, digit1=0, digit2=1, n_steps=8)
     interpolate_between_digits(model, latents, subset_labels, digit1=3, digit2=8, n_steps=8)
 
-    print("\nExploring latent space systematically...")
+    print("\nExploring VAE latent space systematically...")
     explore_latent_space_grid(model, latents, grid_size=5, scale=2.0)
 
-    print("\nPerturbing existing samples...")
+    print("\nPerturbing existing samples in VAE latent space...")
     perturb_existing_samples(model, subset_data, subset_labels, latents, n_samples=8, noise_scale=0.3)
 
-    print("\nVisualization complete!")
+    print("\nVAE visualization complete!")

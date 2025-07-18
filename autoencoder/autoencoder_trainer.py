@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-from visualisation import show_reconstruction  # Import the simple visualization function
+from visualisation import show_reconstruction
 
 
 def create_batches(data, batch_size, shuffle=True):
