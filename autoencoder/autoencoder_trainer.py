@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
 from visualisation import show_reconstruction  # Import the simple visualization function
 
 
@@ -20,11 +21,14 @@ def create_batches(data, batch_size, shuffle=True):
 
 
 def train_autoencoder(model, train_data, optimizer, criterion, epochs, batch_size=64,
-                      visualize_every=1, image_shape=None):
+                      visualize_every=1, image_shape=None, model_save_path="google_model.pth",
+                      log_dir="./runs/autoencoder"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     model.to(device)
     model.train()
+
+    writer = SummaryWriter(log_dir=log_dir)
 
     for epoch in range(epochs):
         batches = create_batches(train_data, batch_size, shuffle=True)
@@ -48,26 +52,14 @@ def train_autoencoder(model, train_data, optimizer, criterion, epochs, batch_siz
         avg_epoch_loss = epoch_loss / num_batches
         print(f"Epoch [{epoch + 1}/{epochs}], Loss: {avg_epoch_loss:.6f}")
 
+        writer.add_scalar('Loss', avg_epoch_loss, epoch + 1)
+
         if visualize_every and (epoch + 1) % visualize_every == 0:
             random_idx = np.random.randint(0, len(train_data))
             viz_sample = train_data[random_idx]
             show_reconstruction(model, viz_sample, epoch + 1)
 
-def validate_autoencoder(model, val_data, criterion, batch_size=64):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval()
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model saved to {model_save_path}")
 
-    batches = create_batches(val_data, batch_size, shuffle=False)
-    total_loss = 0
-    num_batches = len(batches)
-
-    with torch.no_grad():
-        for batch_features in batches:
-            batch_features = torch.FloatTensor(batch_features).to(device)
-            outputs = model(batch_features)
-            loss = criterion(outputs, batch_features)
-            total_loss += loss.item()
-
-    avg_loss = total_loss / num_batches
-    print(f"Validation Loss: {avg_loss:.6f}")
-    return avg_loss
+    writer.close()
