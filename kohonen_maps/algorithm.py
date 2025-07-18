@@ -11,7 +11,8 @@ def konoha_map(map_lines,
                dataset, 
                num_iterations, 
                batch_size=200,
-               save_every=1000):
+               save_every=1000,
+               image_shape=(28, 28)):
     
     W = {}
     initial_lr = learning_rate
@@ -52,7 +53,7 @@ def konoha_map(map_lines,
 
         if iter % save_every == 0 or iter == 0:
             gamma *= 0.995 
-            fig, axes = display_kohonen_map(W, map_lines, map_columns, show=False)
+            fig, axes = display_kohonen_map(W, map_lines, map_columns, shape=image_shape,show=False)
             os.makedirs('data/kohonen_evolution/mnist', exist_ok=True)
             fig.savefig(f'data/kohonen_evolution/mnist/{timestamp}_iter_{iter:06d}_batch_size_{batch_size}_gamma_{gamma}_lr_{current_learning_rate:.6f}.png', 
                        dpi=150, bbox_inches='tight')
@@ -79,7 +80,11 @@ def display_kohonen_map(W, map_lines, map_columns, shape=(28, 28), show=True):
                 image = W[i, j] * 255
             
             image = np.clip(image, 0, 255)
-            axes[i, j].imshow(image.reshape(shape), cmap='gray')
+            if len(shape) == 3:  # RGB
+                reshaped_image = image.reshape(shape).astype(np.uint8)
+                axes[i, j].imshow(reshaped_image)
+            else:  # Niveaux de gris
+                axes[i, j].imshow(image.reshape(shape), cmap='gray')
             axes[i, j].axis('off')
             axes[i, j].set_title(f'({i},{j})', fontsize=8)
     

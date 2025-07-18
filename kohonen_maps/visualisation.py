@@ -10,7 +10,13 @@ def plot_latent_space(W, map_lines, map_columns, shape=(28, 28)):
         for j in range(map_columns):
             image = W[(i, j)] * 255
             image = np.clip(image, 0, 255)
-            axes[i, j].imshow(image.reshape(shape), cmap='gray')
+            
+            if len(shape) == 3:  # RGB
+                reshaped_image = image.reshape(shape).astype(np.uint8)
+                axes[i, j].imshow(reshaped_image)
+            else:  # Niveaux de gris
+                axes[i, j].imshow(image.reshape(shape), cmap='gray')
+                
             axes[i, j].axis('off')
             axes[i, j].set_title(f'({i},{j})', fontsize=8)
     
@@ -48,17 +54,19 @@ def analyze_class_distribution_on_map(data, labels, weights, map_lines, map_colu
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     
     # 1. Carte des classes dominantes
+    unique_labels = sorted(list(set(labels)))
+    label_to_int = {label: i for i, label in enumerate(unique_labels)}
     dominant_class_map = np.full((map_lines, map_columns), -1, dtype=int)
     class_counts_map = np.zeros((map_lines, map_columns))
     
     for (i, j), class_counter in position_class_counts.items():
         if class_counter:
-            dominant_class = class_counter.most_common(1)[0][0]
+            dominant_class_label = class_counter.most_common(1)[0][0]
             total_count = sum(class_counter.values())
-            dominant_class_map[i, j] = dominant_class
+            dominant_class_map[i, j] = label_to_int[dominant_class_label]
             class_counts_map[i, j] = total_count
 
-    im1 = axes[0, 0].imshow(dominant_class_map, cmap='tab10', vmin=0, vmax=9)
+    im1 = axes[0, 0].imshow(dominant_class_map, cmap='tab10', vmin=0, vmax=len(unique_labels)-1)
     axes[0, 0].set_title('Classe dominante par neurone')
     axes[0, 0].set_xlabel('Colonne')
     axes[0, 0].set_ylabel('Ligne')
@@ -66,10 +74,14 @@ def analyze_class_distribution_on_map(data, labels, weights, map_lines, map_colu
     for i in range(map_lines):
         for j in range(map_columns):
             if dominant_class_map[i, j] != -1:
-                axes[0, 0].text(j, i, str(dominant_class_map[i, j]), 
+                class_label = unique_labels[dominant_class_map[i, j]]
+                axes[0, 0].text(j, i, class_label, 
                                ha='center', va='center', fontweight='bold', fontsize=8)
     
-    plt.colorbar(im1, ax=axes[0, 0], label='Classe (0-9)')
+    cbar1 = plt.colorbar(im1, ax=axes[0, 0])
+    cbar1.set_label('Classes')
+    cbar1.set_ticks(range(len(unique_labels)))
+    cbar1.set_ticklabels([label[:6] for label in unique_labels])
     
     # 2. Carte du nombre d'échantillons par neurone
     im2 = axes[0, 1].imshow(class_counts_map, cmap='viridis')
@@ -79,16 +91,16 @@ def analyze_class_distribution_on_map(data, labels, weights, map_lines, map_colu
     plt.colorbar(im2, ax=axes[0, 1], label='Nombre d\'échantillons')
     
     # 3. Distribution globale des classes
-    all_labels = [int(label) for label in labels]
-    class_distribution = Counter(all_labels)
+    class_distribution = Counter(labels)
     classes = sorted(class_distribution.keys())
     counts = [class_distribution[c] for c in classes]
     
-    axes[1, 0].bar(classes, counts, color='skyblue', alpha=0.7)
+    axes[1, 0].bar(range(len(classes)), counts, color='skyblue', alpha=0.7)
     axes[1, 0].set_title('Distribution globale des classes')
     axes[1, 0].set_xlabel('Classe')
     axes[1, 0].set_ylabel('Nombre d\'échantillons')
-    axes[1, 0].set_xticks(classes)
+    axes[1, 0].set_xticks(range(len(classes)))
+    axes[1, 0].set_xticklabels([label[:6] for label in classes], rotation=45, ha='right')
     
     plt.tight_layout()
     plt.suptitle('Analyse de la Distribution des Classes sur la Carte de Kohonen', 
