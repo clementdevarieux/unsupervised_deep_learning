@@ -5,8 +5,8 @@ from vae_visualization import show_reconstruction
 
 
 def train_variational_autoencoder(model, train_data, optimizer, criterion, epochs, batch_size=64,
-                                  visualize_every=1, image_shape=None, model_save_path="google_model.pth",
-                                  log_dir="./runs/autoencoder", coef_KL=.01, beta_schedule=True):
+                                  visualize_every=1, image_shape=(3, 32, 32), model_save_path="fruit_vae_model.pth",
+                                  log_dir="./runs/fruit_autoencoder", coef_KL=.01, beta_schedule=True):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     model.to(device)
@@ -70,7 +70,7 @@ def train_variational_autoencoder(model, train_data, optimizer, criterion, epoch
         if visualize_every and (epoch + 1) % visualize_every == 0:
             random_idx = np.random.randint(0, len(train_data))
             viz_sample = train_data[random_idx]
-            show_reconstruction(model, viz_sample, epoch + 1)
+            show_reconstruction(model, viz_sample, epoch + 1, image_shape=image_shape)
 
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")

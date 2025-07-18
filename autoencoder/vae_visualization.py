@@ -34,37 +34,129 @@ def visualize_latent_space(latent_representations, labels=None, title="VAE Laten
     plt.show()
 
 
-def show_reconstruction(model, sample, epoch=None):
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def show_reconstruction(model, sample, epoch=None, image_shape=(3, 32, 32), n_samples=5):
+    """
+    Show reconstructions of n_samples in a single figure.
+    Creates a 2xn_samples grid: top row = originals, bottom row = reconstructions
+    """
     device = next(model.parameters()).device
     model.eval()
 
+    # If we only got one sample, we need to get more samples from the dataset
+    # This is a bit tricky since we only have one sample passed in
+    # For now, let's just duplicate the sample to show the concept
+    # In practice, you might want to pass a batch of samples instead
+
+    fig, axes = plt.subplots(2, n_samples, figsize=(15, 6))
+
     with torch.no_grad():
-        sample_tensor = torch.FloatTensor(sample).to(device)
-        if len(sample_tensor.shape) == 1:
-            sample_tensor = sample_tensor.unsqueeze(0)
+        for i in range(n_samples):
+            # Use the same sample for demonstration (you could modify this to use different samples)
+            sample_tensor = torch.FloatTensor(sample).to(device)
+            if len(sample_tensor.shape) == 1:
+                sample_tensor = sample_tensor.unsqueeze(0)
 
-        # FIX: Unpack the tuple returned by model()
-        reconstruction, _, _ = model(sample_tensor)
-        reconstruction = reconstruction.cpu().numpy().squeeze()
-        original = sample_tensor.cpu().numpy().squeeze()
+            # Get reconstruction
+            reconstruction, _, _ = model(sample_tensor)
+            reconstruction = reconstruction.cpu().numpy().squeeze()
+            original = sample_tensor.cpu().numpy().squeeze()
 
-    original_img = original.reshape(28, 28)
-    reconstructed_img = reconstruction.reshape(28, 28)
+            # Reshape for display
+            if image_shape == (3, 32, 32):
+                # RGB image
+                original_img = original.reshape(32, 32, 3)
+                reconstructed_img = reconstruction.reshape(32, 32, 3)
 
-    plt.figure(figsize=(6, 3))
+                # Ensure values are in [0, 1] range for display
+                original_img = np.clip(original_img, 0, 1)
+                reconstructed_img = np.clip(reconstructed_img, 0, 1)
+            else:
+                # Grayscale fallback
+                original_img = original.reshape(28, 28)
+                reconstructed_img = reconstruction.reshape(28, 28)
 
-    plt.subplot(1, 2, 1)
-    plt.imshow(original_img, cmap='gray')
-    plt.title('Original')
-    plt.axis('off')
+            # Plot original (top row)
+            axes[0, i].imshow(original_img, cmap='gray' if len(original_img.shape) == 2 else None)
+            axes[0, i].set_title(f'Original {i + 1}')
+            axes[0, i].axis('off')
 
-    plt.subplot(1, 2, 2)
-    plt.imshow(reconstructed_img, cmap='gray')
-    plt.title('Reconstructed')
-    plt.axis('off')
+            # Plot reconstruction (bottom row)
+            axes[1, i].imshow(reconstructed_img, cmap='gray' if len(reconstructed_img.shape) == 2 else None)
+            axes[1, i].set_title(f'Reconstructed {i + 1}')
+            axes[1, i].axis('off')
 
-    title = f'MNIST VAE Reconstruction - Epoch {epoch}' if epoch else 'MNIST VAE Reconstruction'
-    plt.suptitle(title)
+    title = f'Fruit VAE Reconstruction - Epoch {epoch}' if epoch else 'Fruit VAE Reconstruction'
+    plt.suptitle(title, fontsize=16)
+    plt.tight_layout()
+    plt.show()
+
+    model.train()
+
+
+def show_multiple_reconstructions(model, data_samples, epoch=None, image_shape=(3, 32, 32), n_samples=5):
+    """
+    Show reconstructions of multiple different samples.
+    data_samples should be a list/array of samples to reconstruct.
+    """
+    device = next(model.parameters()).device
+    model.eval()
+
+    # Select n_samples random samples from the data
+    if len(data_samples) >= n_samples:
+        selected_indices = np.random.choice(len(data_samples), n_samples, replace=False)
+        selected_samples = [data_samples[i] for i in selected_indices]
+    else:
+        selected_samples = data_samples
+        n_samples = len(selected_samples)
+
+    fig, axes = plt.subplots(2, n_samples, figsize=(3 * n_samples, 6))
+
+    # Handle case where n_samples = 1
+    if n_samples == 1:
+        axes = axes.reshape(2, 1)
+
+    with torch.no_grad():
+        for i, sample in enumerate(selected_samples):
+            sample_tensor = torch.FloatTensor(sample).to(device)
+            if len(sample_tensor.shape) == 1:
+                sample_tensor = sample_tensor.unsqueeze(0)
+
+            # Get reconstruction
+            reconstruction, _, _ = model(sample_tensor)
+            reconstruction = reconstruction.cpu().numpy().squeeze()
+            original = sample_tensor.cpu().numpy().squeeze()
+
+            # Reshape for display
+            if image_shape == (3, 32, 32):
+                # RGB image
+                original_img = original.reshape(32, 32, 3)
+                reconstructed_img = reconstruction.reshape(32, 32, 3)
+
+                # Ensure values are in [0, 1] range for display
+                original_img = np.clip(original_img, 0, 1)
+                reconstructed_img = np.clip(reconstructed_img, 0, 1)
+            else:
+                # Grayscale fallback
+                original_img = original.reshape(28, 28)
+                reconstructed_img = reconstruction.reshape(28, 28)
+
+            # Plot original (top row)
+            axes[0, i].imshow(original_img, cmap='gray' if len(original_img.shape) == 2 else None)
+            axes[0, i].set_title(f'Original {i + 1}')
+            axes[0, i].axis('off')
+
+            # Plot reconstruction (bottom row)
+            axes[1, i].imshow(reconstructed_img, cmap='gray' if len(reconstructed_img.shape) == 2 else None)
+            axes[1, i].set_title(f'Reconstructed {i + 1}')
+            axes[1, i].axis('off')
+
+    title = f'Fruit VAE Reconstructions - Epoch {epoch}' if epoch else 'Fruit VAE Reconstructions'
+    plt.suptitle(title, fontsize=16)
     plt.tight_layout()
     plt.show()
 

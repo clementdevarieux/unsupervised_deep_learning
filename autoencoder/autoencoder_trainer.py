@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-from visualisation import show_reconstruction
+from fruits_visualization import show_reconstruction
 
 
 def create_batches(data, batch_size, shuffle=True):
@@ -21,10 +21,10 @@ def create_batches(data, batch_size, shuffle=True):
 
 
 def train_autoencoder(model, train_data, optimizer, criterion, epochs, batch_size=64,
-                      visualize_every=1, image_shape=None, model_save_path="google_model.pth",
-                      log_dir="./runs/autoencoder"):
+                      visualize_every=1, image_shape=(3, 32, 32), model_save_path="fruit_ae_model.pth",
+                      log_dir="./runs/fruit_autoencoder"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
+    print(f"Using device: {device}")
     model.to(device)
     model.train()
 
@@ -57,7 +57,7 @@ def train_autoencoder(model, train_data, optimizer, criterion, epochs, batch_siz
         if visualize_every and (epoch + 1) % visualize_every == 0:
             random_idx = np.random.randint(0, len(train_data))
             viz_sample = train_data[random_idx]
-            show_reconstruction(model, viz_sample, epoch + 1)
+            show_reconstruction(model, viz_sample, epoch + 1, image_shape=image_shape)
 
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")
