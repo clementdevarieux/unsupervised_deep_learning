@@ -10,6 +10,9 @@ from tensorflow.keras.callbacks import TensorBoard
 import datetime
 import os
 import matplotlib.pyplot as plt
+from data_loader import load_images_from_folder, load_and_normalize_images
+
+
 
 def initialize_generator(latent_dim, image_dim, dropout_rate_generator):
     return Sequential([
@@ -75,7 +78,7 @@ def train_discriminator(generator_model, discriminator_model, real_data, n, batc
 
 
 def train_gan(generator_model, discriminator_model, real_data,
-              n_generator, n_discriminator, batch_size, latent_dim, n_epochs, log_dir="logs/gan", image_dir="GAN/data", lr_generator=0.001, lr_discriminator=0.0001):
+              n_generator, n_discriminator, batch_size, latent_dim, n_epochs, image_reshape_size, log_dir="logs/gan", image_dir="GAN/data", lr_generator=0.001, lr_discriminator=0.0001):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     writer = tf.summary.create_file_writer(log_dir)
@@ -89,20 +92,20 @@ def train_gan(generator_model, discriminator_model, real_data,
             tf.summary.scalar("Discriminator_loss", d_loss, step=epoch)
         if epoch % 100 == 0:
             fake_data = generator_model(np.random.normal(-1, 1, (5, latent_dim)))
-            fake_data = fake_data.numpy().reshape(5, 28, 28)
+            fake_data = fake_data.numpy().reshape(5, image_reshape_size[0], image_reshape_size[1], image_reshape_size[2])
             fake_data = (fake_data * 255).astype(np.uint8)
             for i in range(5):
                 if not os.path.exists(image_dir):
                     os.makedirs(image_dir)
                 Image.fromarray(fake_data[i]).save(f"{image_dir}/fake_data_{epoch}_{i}.png")
             if latent_dim == 2:
-                visualize_latent_space(generator_model, latent_dim=latent_dim, grid_size=10, save_path=f"{image_dir}/latent_space_visualisation_{epoch}.png")
+                visualize_latent_space(generator_model, latent_dim=latent_dim, grid_size=10, save_path=f"{image_dir}/latent_space_visualisation_{epoch}.png", image_reshape_size=image_reshape_size)
     return generator_model, discriminator_model
 
 def get_run_name(latent_dim, batch_size, n_epochs, n_generator, n_discriminator, lr_generator, lr_discriminator, dropout_rate_generator, dropout_rate_discriminator):
-    return f"Wasserstein_ld{latent_dim}_bs{batch_size}_ep{n_epochs}_ng{n_generator}_nd{n_discriminator}_lrg{lr_generator}_lrd{lr_discriminator}_dpg{dropout_rate_generator}_dpd{dropout_rate_discriminator}"
+    return f"FRUITS_Wasserstein_ld{latent_dim}_bs{batch_size}_ep{n_epochs}_ng{n_generator}_nd{n_discriminator}_lrg{lr_generator}_lrd{lr_discriminator}_dpg{dropout_rate_generator}_dpd{dropout_rate_discriminator}"
 
-def visualize_latent_space(generator_model, latent_dim, grid_size=10, figsize=(10, 10), save_path=None):
+def visualize_latent_space(generator_model, latent_dim, image_reshape_size, grid_size=10, figsize=(10, 10), save_path=None):
     if latent_dim != 2:
         raise ValueError("latent_dim != 2")
     x = np.random.normal(-1, 1, grid_size)
@@ -110,13 +113,13 @@ def visualize_latent_space(generator_model, latent_dim, grid_size=10, figsize=(1
     grid = np.array([[xi, yi] for yi in y for xi in x])
     
     generated_images = generator_model.predict(grid)
-    generated_images = generated_images.reshape(-1, 28, 28)
+    generated_images = generated_images.reshape(-1, image_reshape_size[0], image_reshape_size[1], image_reshape_size[2])
 
     fig, axes = plt.subplots(grid_size, grid_size, figsize=figsize)
     idx = 0
     for i in range(grid_size):
         for j in range(grid_size):
-            axes[i, j].imshow(generated_images[idx], cmap="gray")
+            axes[i, j].imshow(generated_images[idx])
             axes[i, j].axis("off")
             idx += 1
     plt.tight_layout()
@@ -127,12 +130,19 @@ def visualize_latent_space(generator_model, latent_dim, grid_size=10, figsize=(1
 
 
 if __name__ == "__main__":
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-    real_data = x_train.reshape(60000, 784).astype('float32') / 255.0
-    latent_dim = 50
-    image_dim = 784
+    input_dir = 'data/fruits_dataset'
+    output_dir = 'processed_data'
+    image_reshape_size = (64, 64, 3)
+
+    images, labels = load_images_from_folder(input_dir, max_images_per_class=5, target_size=image_reshape_size[:2])
+    normalized_images = load_and_normalize_images(images, flatten=True)
+    real_data = np.array(normalized_images)
+    # (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    # real_data = x_train.reshape(60000, 784).astype('float32') / 255.0
+    latent_dim = 2
+    image_dim = real_data.shape[1]
     batch_size = 128
-    n_epochs = 100000
+    n_epochs = 5001
     n_generator = 1
     n_discriminator = 3
     lr_generator = 0.001
@@ -149,7 +159,7 @@ if __name__ == "__main__":
     generator_model = initialize_generator(latent_dim, image_dim, dropout_rate_generator)
     discriminator_model = initialize_discriminator(image_dim, dropout_rate_discriminator)
     generator_model, discriminator_model = train_gan(generator_model, discriminator_model
-    , real_data, n_generator, n_discriminator, batch_size, latent_dim, n_epochs, log_dir=log_dir, lr_generator=lr_generator
+    , real_data, n_generator, n_discriminator, batch_size, latent_dim, n_epochs, image_reshape_size, log_dir=log_dir, lr_generator=lr_generator
     , lr_discriminator=lr_discriminator, image_dir=image_dir
     )
     if not os.path.exists(model_dir):
@@ -161,4 +171,4 @@ if __name__ == "__main__":
     # generator_model = tf.keras.models.load_model("GAN/runs/ld2_bs128_ep10000_ng1_nd3_lrg0.001_lrd0.0001_dpg0.1_dpd0.3_20250717-224359/models/generator_model.keras")
     # latent_dim = 2
     # save_path = f"GAN/data/latent_space_visualisation.png"
-    # visualize_latent_space(generator_model, latent_dim=latent_dim, grid_size=10, save_path=save_path)
+    # visualize_latent_space(generator_model, latent_dim=latent_dim, grid_size=10, save_path=save_path, image_reshape_size=(28, 28))
