@@ -212,3 +212,4 @@ kmeans/k_means_backup.py
 
 # data files
 data/
+runs/

@@ -22,7 +22,8 @@ def visualize_generated_images(images, num_images=10):
     plt.figure(figsize=(10, 10))
     for i in range(num_images):
         plt.subplot(5, 5, i + 1)
-        plt.imshow(images[i].reshape(28, 28), cmap='gray')
+        image = np.clip(images[i], 0, 255) 
+        plt.imshow(image, cmap='gray')
         plt.axis('off')
     plt.tight_layout()
     plt.show()
