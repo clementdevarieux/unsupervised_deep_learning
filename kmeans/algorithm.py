@@ -140,27 +140,14 @@ def display_comparison_fruits(X, centers_file_path, indices, noise_level=0.1, sh
 if __name__ == "__main__":
     # mnist = fetch_openml('mnist_784', version=1)
     # X = (mnist.data.astype(np.float32) / 255.0).to_numpy()
-    # Define the paths
-    input_dir = 'data/fruits_dataset'
-    output_dir = 'processed_data'
 
-    # Load images and labels
+    input_dir = 'data/fruits_dataset'
+
     images, labels = load_images_from_folder(input_dir, max_images_per_class=20, target_size=(32, 32))
 
-    # Preprocess images
     normalized_images = load_and_normalize_images(images, flatten=True)
 
     X = np.array(normalized_images)
-
-    # Save processed images
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    for i, (image, label) in enumerate(zip(normalized_images, labels)):
-        label_dir = os.path.join(output_dir, label)
-        if not os.path.exists(label_dir):
-            os.makedirs(label_dir)
-        np.save(os.path.join(label_dir, f'image_{i}.npy'), image)
 
     dimensions_of_inputs = X.shape[1]
     number_of_clusters = 100
