@@ -15,11 +15,12 @@ from train_vae import train_variational_autoencoder
 if __name__ == '__main__':
     mnist = fetch_openml('mnist_784', version=1)
 
-    activation_function = "relu"
+    activation_function = "tanh"
     batch_size = 64
     epochs = 50
     lr = 1e-4
     criterion = nn.MSELoss()
+    coef_KL=0.1
 
     normalizer = data_normalizer.DataNormalizer(method=activation_function)
     normalized_data = normalizer.fit_transform(mnist.data)
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     sample = torch.FloatTensor(normalized_data[:1])
-    output, mu, logvar = model(sample)  # Unpack the tuple
+    output, mu, logvar = model(sample)
     print(f"Before training - Output range: {output.min():.3f} to {output.max():.3f}")
 
     train_variational_autoencoder(
@@ -41,7 +42,7 @@ if __name__ == '__main__':
         epochs=epochs,
         batch_size=batch_size,
         visualize_every=1,
-        coef_KL=.01
+        coef_KL=coef_KL
     )
     latents = encode_dataset(model, normalized_data)
     new_samples = generate_samples(model, latents, n_samples=100)

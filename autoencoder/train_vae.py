@@ -37,7 +37,7 @@ def train_variational_autoencoder(model, train_data, optimizer, criterion, epoch
                 recon_loss = criterion(outputs, batch_features)
                 kl_loss = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
 
-                total_loss = recon_loss + beta * kl_loss  # Use beta instead of coef_KL
+                total_loss = recon_loss + beta * kl_loss
 
                 total_loss.backward()
 
